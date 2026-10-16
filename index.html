@@ -1,13 +1,224 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Best Sellers</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,700;8..60,900&display=swap"
+      rel="stylesheet"
+    />
+    <style type="text/tailwindcss">
+      @theme {
+        --font-serif: "Source Serif 4", serif;
+        --font-bebas: "Bebas Neue", sans-serif;
+        --font-poppins: "Poppins", sans-serif;
+        --color-ink: #231f20;
+        --color-name: #1c1d1d;
+        --color-muted: #707070;
+        --color-primary: #5c7962;
+        --color-secondary: #5c553a;
+        --color-track: #ddd6d7;
+      }
+      .no-scrollbar { scrollbar-width: none; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
   </head>
-  <body>
-    <h1 class="text-3xl font-bold underline">
-      Hello world!
-    </h1>
+  <body class="bg-white font-poppins text-name">
+    <section class="px-6 py-9 lg:px-32 lg:pt-20 lg:pb-25" aria-labelledby="best-sellers-title">
+      <header class="mb-3 flex items-center justify-center lg:mb-9 lg:justify-between">
+        <h2
+          id="best-sellers-title"
+          class="font-serif text-[28px] leading-[1.26] font-bold tracking-[-0.01em] text-ink lg:text-[40px] lg:leading-[1.2] lg:font-black"
+        >
+          Best Sellers
+        </h2>
+        <a
+          href="#"
+          class="hidden items-center gap-2 rounded-full px-8 py-4 text-sm font-semibold tracking-[0.03em] text-secondary lg:inline-flex"
+        >
+          Shop All Best Sellers
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3.5 10h13M11.5 5l5 5-5 5" />
+          </svg>
+        </a>
+      </header>
+
+      <!--
+        Mobile: first list is a 2-col grid; the second list sits in a collapsible
+        wrapper (grid-rows 0fr -> 1fr) opened by "Show More".
+        Desktop: wrappers use `contents`, so all 10 cards become flex items of the slider.
+      -->
+      <div id="slider" class="no-scrollbar lg:flex lg:snap-x lg:gap-6 lg:overflow-x-auto">
+        <ul id="list-main" class="grid grid-cols-2 gap-x-3 gap-y-3 lg:contents"></ul>
+        <div
+          id="extra"
+          class="grid grid-rows-[0fr] transition-[grid-template-rows] duration-500 ease-in-out lg:contents"
+        >
+          <div class="overflow-hidden lg:contents">
+            <ul id="list-extra" class="grid grid-cols-2 gap-x-3 gap-y-3 pt-3 lg:contents"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- desktop scrollbar: thumb grows 4px -> 6px on hover / touch / drag -->
+      <div
+        id="track"
+        class="group relative mt-12 hidden h-1.5 cursor-pointer touch-none items-center bg-transparent lg:flex"
+        aria-hidden="true"
+      >
+        <div class="absolute inset-x-0 h-1 bg-track"></div>
+        <div
+          id="thumb"
+          class="absolute left-0 h-1 w-[480px] rounded-md bg-ink transition-[height] duration-150 hover:h-1.5 data-[active]:h-1.5"
+        ></div>
+      </div>
+
+      <button
+        id="more"
+        type="button"
+        class="mt-3 w-full rounded-full bg-name px-6 py-4 text-sm font-semibold tracking-[0.03em] text-white lg:hidden"
+      >
+        Show More
+      </button>
+    </section>
+
+    <script>
+      const products = [
+        { name: "Outside Vibes T-Shirt Sunshine", reviews: "1,234 Reviews", price: "$104.95" },
+        { name: "Hike Bottle Outside Vibes Forest Green", reviews: "2,541 Reviews", price: "$89.00" },
+        { name: "Rest In Nature T-Shirt Charcoal", reviews: "986 Reviews", price: "$96.50" },
+        { name: "Outside Vibes Cap Forest Green", reviews: "1,748 Reviews", price: "$72.00" },
+        { name: "Rest In Nature T-Shirt Charcoal", reviews: "3,210 Reviews", price: "$118.00" },
+        { name: "Trail Backpack Midnight", reviews: "2,034 Reviews", price: "$134.90" },
+        { name: "Classic Field Watch Silver", reviews: "1,101 Reviews", price: "$210.00" },
+        { name: "Studio Camera Retro Black", reviews: "824 Reviews", price: "$165.00" },
+        { name: "Citrus Eau De Parfum", reviews: "1,920 Reviews", price: "$76.50" },
+        { name: "Everyday Runner Cloud White", reviews: "2,840 Reviews", price: "$154.00" },
+      ];
+
+      const starSvg = `
+        <svg class="size-[9px] shrink-0 lg:size-3" viewBox="0 0 11 10" fill="none" aria-hidden="true">
+          <path d="M5.53568 0.0730128C5.33151 -0.0243376 5.0943 -0.0243376 4.89012 0.0730128C4.71361 0.15717 4.6163 0.303289 4.56722 0.38345C4.51648 0.466319 4.4644 0.571883 4.41364 0.674777L3.33577 2.85842L0.924746 3.21082C0.81125 3.22739 0.694796 3.24439 0.600339 3.2671C0.508958 3.28908 0.340003 3.3366 0.205548 3.47852C0.0500022 3.6427 -0.0231489 3.86831 0.0064613 4.09253C0.0320567 4.28635 0.140979 4.42397 0.202079 4.49538C0.265238 4.5692 0.349563 4.6513 0.431745 4.73132L2.17564 6.42987L1.76416 8.82901C1.74473 8.94213 1.72481 9.05818 1.71714 9.15506C1.70972 9.24877 1.70254 9.42422 1.79589 9.59608C1.90387 9.79487 2.09581 9.93431 2.31824 9.97554C2.51055 10.0112 2.67519 9.95013 2.76201 9.91411C2.85178 9.87686 2.95599 9.82203 3.05757 9.76858L5.2129 8.63511L7.36824 9.76859C7.46982 9.82203 7.57403 9.87686 7.6638 9.91411C7.75062 9.95013 7.91526 10.0112 8.10756 9.97554C8.33 9.93431 8.52194 9.79487 8.62991 9.59608C8.72326 9.42422 8.71609 9.24877 8.70867 9.15506C8.701 9.05818 8.68107 8.94214 8.66165 8.82903L8.25016 6.42987L9.99408 4.7313C10.0763 4.65129 10.1606 4.5692 10.2237 4.49538C10.2848 4.42397 10.3937 4.28635 10.4193 4.09253C10.449 3.86831 10.3758 3.6427 10.2203 3.47852C10.0858 3.3366 9.91685 3.28908 9.82547 3.2671C9.73101 3.24439 9.61455 3.22739 9.50106 3.21082L7.09003 2.85842L6.01219 0.674815C5.96142 0.571914 5.90933 0.466325 5.85859 0.38345C5.80951 0.303289 5.71219 0.15717 5.53568 0.0730128Z" fill="#231F20"/>
+        </svg>`;
+      const renderStars = () => Array.from({ length: 5 }, () => starSvg).join("");
+
+      const photoIds = [
+        "photo-1521572267360-ee0c2909d518",
+        "photo-1517841905240-472988babdf9",
+        "photo-1500530855697-b586d89ba3ee",
+        "photo-1526045612212-70caf35c14df",
+        "photo-1524504388940-b1c1722653e1",
+        "photo-1512436991641-6745cdb1723f",
+        "photo-1493246507139-91e8fad9978e",
+        "photo-1515886657613-9f3515b0c78f",
+        "photo-1483985988355-763728e1935b",
+        "photo-152798296b01d5dde7417d3577b8cd7c"
+      ];
+
+      const randomImage = (seed) => {
+        const id = photoIds[Math.abs(seed) % photoIds.length];
+        return `https://images.unsplash.com/${id}?auto=format&fit=crop&w=710&h=710&q=80`;
+      };
+
+      const item = ({ name, reviews, price }, index) => `
+        <li class="lg:w-[355px] lg:shrink-0 lg:snap-start">
+          <article class="block flex flex-col gap-3 pb-2 lg:gap-4 lg:pb-4">
+            <figure class="group relative m-0 aspect-square overflow-hidden rounded-[10px] bg-transparent">
+              <div class="absolute left-2 top-2 z-10">
+                <span class="inline-flex rounded-full bg-[#F6F2EE] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-ink">Bestseller</span>
+              </div>
+              <div class="absolute right-2 top-2 z-10">
+                <span class="inline-flex rounded-full bg-[#5C7962] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-white">Save 20%</span>
+              </div>
+              <img src="${randomImage(index + 1)}" alt="${name}" loading="lazy" class="absolute inset-0 size-full object-cover" />
+              <img src="${randomImage(index + 7)}" alt="" aria-hidden="true" loading="lazy"
+                class="absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            </figure>
+            <div class="flex flex-col gap-2 px-2 lg:px-3">
+              <h3 class="font-bebas text-base leading-[19px] tracking-[0.03em] text-name uppercase lg:text-lg lg:leading-[22px]">
+                <a href="#">${name}</a>
+              </h3>
+              <div class="flex items-center gap-1">
+                <div class="flex items-center gap-0.5" role="img" aria-label="Rated 5 out of 5">${renderStars()}</div>
+                <a href="#" class="text-[11px] leading-4 text-muted lg:text-xs lg:leading-[18px]">${reviews}</a>
+              </div>
+              <p class="text-base leading-6 font-medium text-name uppercase">${price}</p>
+            </div>
+          </article>
+        </li>`;
+
+      const renderProducts = () => {
+        document.getElementById("list-main").innerHTML = products.slice(0, 4).map(item).join("");
+        document.getElementById("list-extra").innerHTML = products.slice(4).map(item).join("");
+      };
+
+      const toggleMore = () => {
+        const more = document.getElementById("more");
+        const extra = document.getElementById("extra");
+        const open = extra.classList.toggle("grid-rows-[1fr]");
+
+        extra.classList.toggle("grid-rows-[0fr]", !open);
+        more.textContent = open ? "Show Less" : "Show More";
+      };
+
+      const syncSliderThumb = () => {
+        const slider = document.getElementById("slider");
+        const track = document.getElementById("track");
+        const thumb = document.getElementById("thumb");
+        const range = () => track.clientWidth - thumb.offsetWidth;
+        const maxScroll = () => slider.scrollWidth - slider.clientWidth;
+
+        thumb.style.transform = `translateX(${maxScroll() > 0 ? (slider.scrollLeft / maxScroll()) * range() : 0}px)`;
+      };
+
+      const scrollToPointer = (x) => {
+        const slider = document.getElementById("slider");
+        const track = document.getElementById("track");
+        const thumb = document.getElementById("thumb");
+        const range = () => track.clientWidth - thumb.offsetWidth;
+        const maxScroll = () => slider.scrollWidth - slider.clientWidth;
+        const rect = track.getBoundingClientRect();
+        const p = (x - rect.left - thumb.offsetWidth / 2) / range();
+
+        slider.scrollLeft = Math.max(0, Math.min(1, p)) * maxScroll();
+      };
+
+      const initMoreToggle = () => {
+        const more = document.getElementById("more");
+        more.addEventListener("click", toggleMore);
+      };
+
+      const initSliderDrag = () => {
+        const slider = document.getElementById("slider");
+        const track = document.getElementById("track");
+        const thumb = document.getElementById("thumb");
+
+        slider.addEventListener("scroll", syncSliderThumb, { passive: true });
+        track.addEventListener("pointerdown", (event) => {
+          track.setPointerCapture(event.pointerId);
+          thumb.dataset.active = "";
+          scrollToPointer(event.clientX);
+        });
+        track.addEventListener("pointermove", (event) => {
+          if (track.hasPointerCapture(event.pointerId)) scrollToPointer(event.clientX);
+        });
+        const release = () => delete thumb.dataset.active;
+        track.addEventListener("pointerup", release);
+        track.addEventListener("pointercancel", release);
+        slider.addEventListener("touchstart", () => (thumb.dataset.active = ""), { passive: true });
+        slider.addEventListener("touchend", release);
+        addEventListener("resize", syncSliderThumb);
+        addEventListener("load", syncSliderThumb);
+      };
+
+      renderProducts();
+      initMoreToggle();
+      initSliderDrag();
+      syncSliderThumb();
+    </script>
   </body>
 </html>
